@@ -1,0 +1,33 @@
+name: Refresh News Feed
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install node-fetch@2 xml2js
+
+      - name: Fetch ForexFactory and write CSV
+        run: node scripts/fetch_events.js
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news_events.csv
+          git diff --cached --quiet || git commit -m "chore: refresh news events $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
